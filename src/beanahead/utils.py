@@ -35,6 +35,7 @@ ADOPT_OPTIONS = [
     "name_liabilities",
     "name_income",
     "name_expenses",
+    "name_equity",
 ]
 
 RX_META_DFLTS = {
