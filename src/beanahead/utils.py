@@ -164,7 +164,7 @@ def compose_header_footer(file_key: str, extra_headers: str | None) -> tuple[str
 
 
 def create_beanahead_file(
-    file_key: str, dirpath: str | None = None, filename: str | None = None
+    file_key: str, main_ledger: str, dirpath: str | None = None, filename: str | None = None
 ):
     """Create a new beanahead file.
 
@@ -175,6 +175,9 @@ def create_beanahead_file(
             "x" - Expected Transactions Ledger
             "rx" - Regular Expected Transactions Ledger
             "rx_def" - Regular Expected Transaction Definitions file
+
+    main_ledger
+        path to the main ledger in order to read its root account naming options
 
     dirpath
         Path to directory in which to create new file. Can be absolute or
@@ -206,7 +209,12 @@ def create_beanahead_file(
     if path.is_file():
         raise FileExistsError(path)
 
-    header, footer = compose_header_footer(file_key)
+    name_options = set_root_accounts_context(main_ledger)
+    extra_headers = ""
+    for k, v in name_options.items():
+            extra_headers += f'option "{k}" "{v}"\n'
+
+    header, footer = compose_header_footer(file_key, extra_headers)
     content = header + "\n\n" + footer
 
     with path.open("wt", encoding=ENCODING) as file:
