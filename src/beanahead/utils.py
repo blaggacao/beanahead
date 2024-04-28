@@ -782,7 +782,10 @@ def create_ledger_content(file_key: str, txns: list[Transaction]) -> str:
     """
     validate_ledger_file_key(file_key)
     txns_content = compose_entries_content(txns)
-    return compose_new_content(file_key, txns_content)
+    extra_headers = ""
+    for k, v in RootAccountsContext.items():
+            extra_headers += f'option "{k}" "{v}"\n'
+    return compose_new_content(file_key, txns_content, extra_headers)
 
 
 def remove_txns_from_ledger(path: Path, txns: list[Transaction]):
