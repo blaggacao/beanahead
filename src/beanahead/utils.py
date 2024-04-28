@@ -30,6 +30,13 @@ TAG_X = "x_txn"
 TAG_RX = "rx_txn"
 TAGS_X = set([TAG_X, TAG_RX])
 
+ADOPT_OPTIONS = [
+    "name_assets",
+    "name_liabilities",
+    "name_income",
+    "name_expenses",
+]
+
 RX_META_DFLTS = {
     "final": None,
     "roll": True,
@@ -68,6 +75,8 @@ FILE_CONFIG = {
 
 LEDGER_FILE_KEYS = ["x", "rx"]
 
+RootAccountsContext = {} # global context
+
 
 def validate_file_key(file_key: str):
     """Validate a file_key.
@@ -99,7 +108,7 @@ def validate_ledger_file_key(file_key: str):
         )
 
 
-def compose_header_footer(file_key: str) -> tuple[str, str]:
+def compose_header_footer(file_key: str, extra_headers: str | None) -> tuple[str, str]:
     """Compose header and footer for an expected transactions file.
 
     Parameters
@@ -117,6 +126,10 @@ def compose_header_footer(file_key: str) -> tuple[str, str]:
     plugin, tag, comment = config["plugin"], config["tag"], config["comment"]
 
     header = f"""option "title" "{config['title']}"\n"""
+    if extra_headers:
+        header += '\n'
+        header += extra_headers
+        header += '\n'
     if plugin is not None:
         header += f'plugin "{plugin}"\n'
     header += f"pushtag #{tag}\n"
@@ -538,10 +551,7 @@ def is_assets_account(string: str) -> bool:
     >>> is_assets_account("Assets:US:BofA:Checking")
     True
     """
-    return is_account_type("Assets", string)
-
-
-BAL_SHEET_ACCS = ["Assets", "Liabilities"]
+    return is_account_type(RootAccountsContext.get("name_assets", "Assets"), string)
 
 
 def is_balance_sheet_account(string: str) -> bool:
@@ -567,7 +577,10 @@ def is_balance_sheet_account(string: str) -> bool:
     >>> is_balance_sheet_account("Income:US:BayBook:Match401k")
     False
     """
-    return any(is_account_type(acc_type, string) for acc_type in BAL_SHEET_ACCS)
+    return any(is_account_type(acc_type, string) for acc_type in [
+        RootAccountsContext.get("name_assets", "Assets"),
+        RootAccountsContext.get("name_liabilities", "Liabilities"),
+    ])
 
 
 def get_balance_sheet_accounts(txn: Transaction) -> list[str]:
@@ -676,7 +689,7 @@ def compose_entries_content(entries: data.Directive | data.Entries) -> str:
     return content[:-1]
 
 
-def compose_new_content(file_key: str, txns_content: str) -> str:
+def compose_new_content(file_key: str, txns_content: str, extra_headers: str) -> str:
     """Compose full content of an expected transactions .beancount file.
 
     Parameters
@@ -698,7 +711,7 @@ def compose_new_content(file_key: str, txns_content: str) -> str:
     ValueError
         If created content parses with syntax errors.
     """
-    header, footer = compose_header_footer(file_key)
+    header, footer = compose_header_footer(file_key, extra_headers)
     content = header + "\n\n" + txns_content + "\n\n" + footer
     _, errors, _ = parser.parse_string(content)
     if errors:

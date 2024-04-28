@@ -209,9 +209,9 @@ def get_definition_group(definition: Transaction) -> GrouperKey:
         if account == bal_sheet_account:
             continue
         account_type = get_account_type(account)
-        if account_type == "Assets":
+        if account_type == utils.RootAccountsContext.get("name_assets", "Assets"):
             other_sides.add("Assets")
-        elif account_type == "Income":
+        elif account_type == utils.RootAccountsContext.get("name_income", "Income"):
             other_sides.add("Income")
         else:
             other_sides.add("Expenses")
@@ -310,7 +310,7 @@ def compose_definitions_content(txns: list[Transaction]) -> str:
 VALID_FILE_KEYS = ["rx", "rx_def"]
 
 
-def compose_new_content(file_key: str, txns: list[Transaction]) -> str:
+def compose_new_content(file_key: str, txns: list[Transaction], path_ledger_main: str) -> str:
     """Return new content for a regular x transactions .beancount file.
 
     Return will order transactions according to nature of file represented
@@ -344,13 +344,23 @@ def compose_new_content(file_key: str, txns: list[Transaction]) -> str:
             f"'{file_key}' is not a valid file key. Valid values for"
             f" `file_key` are {valid_keys}."
         )
+    name_options: dict[str] = {}
+    ledger_main_options = utils.get_options(path_ledger_main)
+    for opt in utils.ADOPT_OPTIONS:
+        if opt in ledger_main_options:
+            name_options[opt] = ledger_main_options[opt]
+    utils.RootAccountsContext = name_options 
 
     if file_key.endswith("def"):
         txns_content = compose_definitions_content(txns)
     else:
         txns.sort(key=data.entry_sortkey)
         txns_content = utils.compose_entries_content(txns)
-    content = utils.compose_new_content(file_key, txns_content)
+
+    extra_headers = ""
+    for k, v in name_options.items():
+            extra_headers += f'option "{k}" "{v}"\n'
+    content = utils.compose_new_content(file_key, txns_content, extra_headers)
 
     new_entries, _, _ = parser.parse_string(content)
     new_txns = utils.extract_txns(new_entries)
@@ -657,8 +667,8 @@ class Admin:
         ledger_txns = self.rx_txns + new_txns
 
         # ensure all new content checks out before writting anything
-        content_ledger = compose_new_content("rx", ledger_txns)
-        content_defs = compose_new_content("rx_def", new_defs)
+        content_ledger = compose_new_content("rx", ledger_txns, self.path_ledger_main)
+        content_defs = compose_new_content("rx_def", new_defs, self.path_ledger_main)
 
         self._overwrite_beancount_file(self.path_ledger, content_ledger)
         also_revert = [self.path_ledger]
