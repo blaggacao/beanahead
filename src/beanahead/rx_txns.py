@@ -397,7 +397,7 @@ class Admin:
 
     def __init__(self, defs: str, ledger: str, ledger_main: str | None = None):
         self.path_defs = utils.get_verified_path(defs, "rx_def")
-        self._verify_payees_unique()
+        # self._verify_payees_unique()
 
         self.path_ledger = utils.get_verified_path(ledger, "rx")
 
