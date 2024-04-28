@@ -518,7 +518,7 @@ def reverse_automatic_balancing(txn: Transaction) -> Transaction:
     """
     new_postings = []
     for posting in txn.postings:
-        if AUTOMATIC_META in posting.meta:
+        if AUTOMATIC_META in (posting.meta or {}):
             meta = {k: v for k, v in posting.meta.items() if k != AUTOMATIC_META}
             posting = posting._replace(units=None, meta=meta)
         new_postings.append(posting)
