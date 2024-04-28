@@ -6,6 +6,7 @@ import copy
 import datetime
 from pathlib import Path
 import re
+import sys
 
 from beancount import loader
 from beancount.core import data
@@ -845,7 +846,8 @@ def get_input(text: str) -> str:
     -----
     Function included to facilitate mocking user input when testing.
     """
-    return input(text)
+    print(text, file=sys.stderr, end=": ")
+    return input()
 
 
 def response_is_valid_number(response: str, max_value: int) -> bool:
