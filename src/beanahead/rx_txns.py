@@ -344,13 +344,7 @@ def compose_new_content(file_key: str, txns: list[Transaction], path_ledger_main
             f"'{file_key}' is not a valid file key. Valid values for"
             f" `file_key` are {valid_keys}."
         )
-    name_options: dict[str] = {}
-    ledger_main_options = utils.get_options(path_ledger_main)
-    for opt in utils.ADOPT_OPTIONS:
-        if opt in ledger_main_options:
-            name_options[opt] = ledger_main_options[opt]
-    utils.RootAccountsContext = name_options 
-
+    name_options = utils.set_root_accounts_context(path_ledger_main)
     if file_key.endswith("def"):
         txns_content = compose_definitions_content(txns)
     else:

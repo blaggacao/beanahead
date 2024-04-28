@@ -78,6 +78,23 @@ LEDGER_FILE_KEYS = ["x", "rx"]
 
 RootAccountsContext = {} # global context
 
+def set_root_accounts_context(path_ledger_main: str) -> dict[str]:
+    """Set the root accounts context from the main ledger file path.
+
+    Returns
+    -------
+    dict[str]
+        The name options set in the main ledger.
+    """
+    name_options: dict[str] = {}
+    ledger_main_options = get_options(path_ledger_main)
+    for opt in ADOPT_OPTIONS:
+        if opt in ledger_main_options:
+            name_options[opt] = ledger_main_options[opt]
+    global RootAccountsContext
+    RootAccountsContext = name_options
+    return name_options
+
 
 def validate_file_key(file_key: str):
     """Validate a file_key.
